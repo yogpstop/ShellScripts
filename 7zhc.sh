@@ -1,0 +1,1 @@
+7z a -ms=4g -mhc=on -mhe=on -m0=LZMA:a1:d=1024m:mf=bt4:fb=273:mc1000000000 "$@"
