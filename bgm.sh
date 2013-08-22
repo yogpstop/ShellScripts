@@ -8,12 +8,12 @@ for arg in "$@" ; do
   if [ ${arg} == *.flac ] ; then
     fl+=(${arg})
   elif [ -d "${arg}" ] ; then
-    fl+=(`find "${arg}" -type f -iname "*.flac" -exec echo "{}" \;`)
+    fl+=(`find "${arg}" -type f -iname "*.flac"`)
   elif [ -f "${arg}" ] ; then
     bdir=`dirname "${arg}"`
     while read line ; do
       line=`readlink -mq "${bdir}/${line}"`
-      if [ -f "${arg}" && ${arg} == *.flac ] ; then
+      if [ -f "${line}" -a "${line##*.}" = "flac" ] ; then
         fl+=(${line})
       fi
     done <"${arg}"
