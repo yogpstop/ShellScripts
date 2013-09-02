@@ -1,6 +1,8 @@
 #!/bin/bash
 echo -n "you want to install OpenSSH server?[y/N] "
 read sshd
+echo -n "do you use intel video card?[y/N] "
+read intel
 if [ "`grep -i ubuntu /etc/issue`" != "" ] ; then
 	dest="ubuntu"
 fi
@@ -11,8 +13,13 @@ if [ "${dest}" = "" ] ; then
 	echo "Script cannot detect destribution"
 	exit 1
 fi
-packages="ntpdate cups lm-sensors" #correctTime,PrintServer,HeatSensor
-packages+=" xserver-xorg-video-vesa xserver-xorg xinit" #X11
+packages="ntpdate deborphan" #correctTime,PackageManager
+if [ "${intel}" = "y" -o "${intel}" = "Y" ] ; then
+	packages+=" xserver-xorg-video-intel"
+else
+	packages+=" xserver-xorg-video-vesa"
+fi
+packages+=" xserver-xorg xinit" #X11
 if [ "${dest}" = "ubuntu" ] ; then
 	packages+=" gdm3"
 else
@@ -23,7 +30,7 @@ packages+=" ibus-mozc im-switch" #JapaneseInput
 packages+=" gparted ntfsprogs dosfstools mtools e2fsprogs" #Partitioning
 packages+=" alsa-base alsa-utils flac mplayer geeqie audacity gimp" #Multimedia
 packages+=" leafpad vim ghex git astyle" #programming
-packages+=" google-chrome-stable python-gpgme dropbox transmission-gtk ftp-ssl" #networking
+packages+=" google-chrome-stable python-gpgme dropbox transmission-gtk" #networking
 packages+=" kernel-package fakeroot libncurses5-dev" #kernelBuild
 packages+=" p7zip-full p7zip-rar" #Archive Utils
 if [ "${sshd}" = "y" -o "${sshd}" = "Y" ] ; then
