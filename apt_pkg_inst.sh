@@ -46,7 +46,10 @@ else
 fi
 echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >>"/etc/apt/sources.list.d/yogpstop_dpi.list"
 
-apt-get -y --purge --no-install-recommends update
+sudo apt-key adv --keyserver pgp.mit.edu --recv-keys 5044912E
+wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+
+apt-get -y update
 apt-get -y --purge --no-install-recommends dist-upgrade
 apt-get -y --purge --no-install-recommends install ${packages}
 apt-get -y --purge --no-install-recommends autoremove

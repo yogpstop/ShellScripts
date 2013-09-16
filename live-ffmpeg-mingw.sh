@@ -76,6 +76,16 @@ make || exit 1
 make install || exit 1
 cd || exit 1
 rm -rf fdk-aac || exit 1
+# lame
+wget http://sourceforge.net/projects/lame/files/lame/3.99/lame-3.99.5.tar.gz/download # TODO
+tar xvf lame-3.99.5.tar.gz
+rm -rf lame-3.99.5.tar.gz
+cd lame-3.99.5 || exit 1
+./configure --disable-shared --enable-static --prefix=/${HOST} --disable-frontend || exit 1
+make || exit 1
+make install || exit 1
+cd || exit 1
+rm -rf lame-3.99.5 || exit 1
 # x264
 git clone --depth 1 git://git.videolan.org/x264.git || exit 1
 cd x264 || exit 1
@@ -87,11 +97,24 @@ rm -rf x264 || exit 1
 # ffmpeg
 git clone --depth 1 git://source.ffmpeg.org/ffmpeg.git || exit 1
 cd ffmpeg || exit 1
+patch -p0 <<'_EOT_'
+--- libavcodec/Makefile        2013-08-16 13:46:37 +0900
++++ libavcodec/Makefile.new    2013-08-16 14:19:43 +0900
+@@ -692,7 +692,7 @@
+ OBJS-$(CONFIG_LIBGSM_MS_ENCODER)          += libgsm.o
+ OBJS-$(CONFIG_LIBILBC_DECODER)            += libilbc.o
+ OBJS-$(CONFIG_LIBILBC_ENCODER)            += libilbc.o
+-OBJS-$(CONFIG_LIBMP3LAME_ENCODER)         += libmp3lame.o mpegaudiodecheader.o
++OBJS-$(CONFIG_LIBMP3LAME_ENCODER)         += libmp3lame.o mpegaudiodata.o mpegaudiodecheader.o
+ OBJS-$(CONFIG_LIBOPENCORE_AMRNB_DECODER)  += libopencore-amr.o
+ OBJS-$(CONFIG_LIBOPENCORE_AMRNB_ENCODER)  += libopencore-amr.o
+ OBJS-$(CONFIG_LIBOPENCORE_AMRWB_DECODER)  += libopencore-amr.o
+_EOT_
 PKG_CONFIG_PATH=/${HOST}/lib/pkgconfig \
-./configure --fatal-warnings --enable-gpl --enable-nonfree --disable-everything \
+./configure --fatal-warnings --enable-gpl --enable-nonfree --disable-everything --enable-libmp3lame \
 --disable-ffprobe --disable-ffserver --disable-ffplay --disable-doc --disable-debug \
 --enable-libfdk-aac --enable-libx264 --enable-librtmp --cpu=corei7-avx --enable-static --disable-shared \
---enable-encoder='libx264,libfdk_aac' --enable-muxer=flv --enable-protocol='file,librtmp,tcp' \
+--enable-encoder='libx264,libfdk_aac,libmp3lame' --enable-muxer=flv --enable-protocol='file,librtmp,tcp' \
 --enable-indev=dshow --enable-filter='scale,aresample' --enable-decoder='rawvideo,pcm_s16le' || exit 1
 make || exit 1
 cp ffmpeg.exe .. || exit 1

@@ -1,6 +1,6 @@
 #!/bin/bash
 lwjgl="${HOME}/lwjgl-2.9.0"
-listdir="/media/DATA/Minecraft/"
+listdir="/media/DATA_B/Minecraft/"
 
 case `uname -s` in
   *FreeBSD ) osdir="freebsd"
@@ -16,7 +16,7 @@ case `uname -s` in
   windows="YES" ;;
 esac
 
-drs=(`find "${listdir}" -maxdepth 1 -type d | sed -e "s~${listdir}~~" | grep "^[^\.]"`)
+drs=(`find "${listdir}" -maxdepth 1 -mindepth 1 -type d -exec test -f "{}/minecraft.jar" \; -print | sed -e "s~${listdir}~~"`)
 cnt=`expr ${#drs[@]} - 1`
 num=-1
 for i in `seq 0 ${cnt}` ; do
