@@ -7,8 +7,7 @@ for i in `seq 0 ${cnt}` ; do
   echo $i ${list[$i]}
 done
 while test -z "${num}" || [ ${num} -ge ${#list[@]} -o ${num} -lt 0 ] ; do
-  echo -n "Select version : "
-  read num
+  read -p "Select version: " num
 done
 path+="/${list[${num}]}"
 list=(`echo -e "open ftp.kernel.org\nuser anonymous guest\n ls ${path} -\nexit" | ftp -n | sed -e "s/^.* \([^ ]*\) *$/\1/g" | grep -E "patch-.*\.patch\.xz$"`)
@@ -20,9 +19,12 @@ if [ ${#list[@]} -ne 1 ] ; then
     echo $i ${list[$i]}
   done
   while test -z "${num}" || [ ${num} -ge ${#list[@]} -o ${num} -lt 0 ] ; do
-    echo -n "Select version : "
-    read num
+    read -p "Select version: " num
   done
+fi
+read -p "Please type revision number: " revision
+if [ -z "${revision}" ] ; then
+	revision="--revision=${revision}"
 fi
 filename="linux-"
 filename+=`echo "${list[${num}]}" | sed -e "s/^patch-\(.*\)-rt.*\.patch\.xz$/\1/"`
@@ -38,11 +40,6 @@ rm -f ../patch.xz
 cp /boot/config-$(uname -r) .config
 make silentoldconfig
 make menuconfig
-echo -n "Please type revision number: "
-read revision
-if [ -z "${revision}" ] ; then
-revision="--revision=${revision}"
-fi
 make-kpkg clean
 CONCURRENCY_LEVEL=12
 export CONCURRENCY_LEVEL

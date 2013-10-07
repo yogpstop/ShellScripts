@@ -1,6 +1,6 @@
 #!/bin/bash
 lwjgl="${HOME}/lwjgl-2.9.0"
-listdir="/media/DATA_B/Minecraft/"
+listdir="/d/Minecraft/"
 
 case `uname -s` in
   *FreeBSD ) osdir="freebsd"
@@ -23,8 +23,7 @@ for i in `seq 0 ${cnt}` ; do
   echo $i ${drs[$i]}
 done
 while test -z "${num}" || test "${num}" -ge ${#drs[@]} -o "${num}" -lt 0 ; do
-  echo -n "Select directory : "
-  read num
+  read -p "Select directory: " num
 done
 
 basedir="${listdir}${drs[$num]}"
@@ -57,8 +56,7 @@ for i in `seq 0 ${cnt}` ; do
   echo $i ${drs[$i]}
 done
 while  test -z "${num}" || test "${num}" -ge ${#drs[@]} -o "${num}" -lt 0 ; do
-  echo -n "Select username : "
-  read num
+  read -p "Select username: " num
 done
 user="${drs[$num]}"
 pass=`openssl enc -d -aes-256-cfb8 -in "${listdir}.users/${user}"`

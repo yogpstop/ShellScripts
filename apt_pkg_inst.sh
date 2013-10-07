@@ -1,8 +1,6 @@
 #!/bin/bash
-echo -n "you want to install OpenSSH server?[y/N] "
-read sshd
-echo -n "do you use intel video card?[y/N] "
-read intel
+read -p "Do you want to install OpenSSH server?[y/N]" -n1 sshd
+read -p "Do you use intel video card?[y/N]" -n1 intel
 if [ "`grep -i ubuntu /etc/issue`" != "" ] ; then
 	dest="ubuntu"
 fi
