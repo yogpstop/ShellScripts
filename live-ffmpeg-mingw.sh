@@ -5,35 +5,22 @@ if [ "${HOST}" = "x86_64-w64-mingw32" ] ; then
 else
 	OST="mingw"
 fi
-if wmic OS get OSArchitecture | grep 64 ; then
-	PYTHON_ARCH=".amd64"
-else
-	PYTHON_ARCH=
-fi
 cd || exit 1
-if ! python --version ; then
-	PYTHON_YASM="PYTHON=/c/Python27/python"
-	if ! /c/Python27/python --version ; then
-		wget -q "http://www.python.org/ftp/python/2.7.5/python-2.7.5${PYTHON_ARCH}.msi" -O "python-2.7.5.msi"
-		msiexec -qn -i "python-2.7.5.msi" "TARGETDIR=c:\Python27"
-		rm -rf "python-2.7.5.msi"
-	fi
-else
-	PYTHON_YASM=
-fi
+python --version || exit 1
 # YASM
 git clone --depth 1 git://github.com/yasm/yasm.git || exit 1
 cd yasm || exit 1
-./autogen.sh CFLAGS="-O3 -march=native" "${PYTHON_YASM}" || exit 1
+./autogen.sh || exit 1
 make || exit 1
 make install-strip || exit 1
 cd || exit 1
 rm -rf yasm || exit 1
 # NASM
-git clone --depth 1 git://repo.or.cz/nasm.git || exit 1
+git clone git://repo.or.cz/nasm.git || exit 1
 cd nasm || exit 1
+git checkout nasm-2.10.09
 ./autogen.sh || exit 1
-./configure CFLAGS="-O3 -march=native" || exit 1
+./configure || exit 1
 make || exit 1
 make strip || exit 1
 make install || exit 1
@@ -52,9 +39,8 @@ rm -rf openssl || exit 1
 # RTMPDump
 git clone --depth 1 git://git.ffmpeg.org/rtmpdump.git || exit 1
 cd rtmpdump || exit 1
-make SYS=mingw SHARED=no prefix=/${HOST} XCFLAGS="-O3 -march=native" || exit 1
-make install SYS=mingw SHARED=no prefix=/${HOST} \
-	XCFLAGS="-O3 -march=native" || exit 1
+make SYS=mingw SHARED=no prefix=/${HOST} || exit 1
+make install SYS=mingw SHARED=no prefix=/${HOST} || exit 1
 cd /${HOST}/lib/pkgconfig || exit 1
 (patch -p0 <<'_EOT_'
 --- libcrypto.pc        2013-08-16 13:46:37 +0900
@@ -84,11 +70,10 @@ _EOT_
 cd || exit 1
 rm -rf rtmpdump || exit 1
 # fdk-aac
-git clone git://github.com/mstorsjo/fdk-aac.git || exit 1
+git clone --depth 1 git://github.com/mstorsjo/fdk-aac.git || exit 1
 cd fdk-aac || exit 1
 ./autogen.sh || exit 1
-./configure --prefix=/${HOST} --disable-shared --enable-static \
-	CFLAGS="-O3 -march=native" CXXFLAGS="-O3 -march=native" || exit 1
+./configure --prefix=/${HOST} --disable-shared --enable-static || exit 1
 make || exit 1
 make install || exit 1
 cd || exit 1
@@ -101,7 +86,7 @@ CVS_PASSFILE=lame.cvspass cvs -z3 \
 rm -rf lame.cvspass || exit 1
 cd lame || exit 1
 ./configure --disable-shared --enable-static --prefix=/${HOST} \
-	--disable-frontend CFLAGS="-O3 -march=native" || exit 1
+	--disable-frontend || exit 1
 make || exit 1
 make install || exit 1
 cd || exit 1
@@ -110,8 +95,7 @@ rm -rf lame || exit 1
 git clone --depth 1 git://git.videolan.org/x264.git || exit 1
 cd x264 || exit 1
 ./configure --host=${HOST} --prefix=/${HOST} --enable-win32thread \
-	--enable-static --disable-cli --extra-cflags="-O3 -march=native" \
-	--enable-strip || exit 1
+	--enable-static --disable-cli --enable-strip || exit 1
 make || exit 1
 make install || exit 1
 cd || exit 1
@@ -138,11 +122,10 @@ PKG_CONFIG_PATH=/${HOST}/lib/pkgconfig \
 --disable-everything --enable-libmp3lame --disable-ffprobe \
 --disable-ffserver --disable-ffplay --disable-doc --disable-debug \
 --enable-libfdk-aac --enable-libx264 --enable-librtmp --cpu=native \
---enable-static --disable-shared --extra-cflags="-O3 -march=native" \
+--enable-static --disable-shared --enable-indev=dshow \
 --enable-encoder='libx264,libfdk_aac,libmp3lame' --enable-muxer=flv \
---enable-protocol='file,librtmp,tcp' --enable-indev=dshow \
---enable-filter='scale,aresample' --enable-decoder='rawvideo,pcm_s16le' \
---extra-cxxflags="-O3 -march=native" || exit 1
+--enable-protocol='file,librtmp,tcp' --enable-filter='scale,aresample' \
+--enable-decoder='rawvideo,pcm_s16le' || exit 1
 make || exit 1
 cp ffmpeg.exe .. || exit 1
 cd || exit 1

@@ -18,17 +18,12 @@ else
 	packages+=" xserver-xorg-video-vesa"
 fi
 packages+=" xserver-xorg xinit" #X11
-if [ "${dest}" = "ubuntu" ] ; then
-	packages+=" gdm3"
-else
-	packages+=" gdm"
-fi
-packages+=" gnome-session-fallback gnome-terminal nautilus libgnome2-0" #GNOME
+packages+=" lxde-common lxpanel lightdm lxterminal openbox pcmanfm libgnome2-0" #GNOME
 packages+=" ibus-mozc im-switch" #JapaneseInput
-packages+=" gparted ntfsprogs dosfstools mtools e2fsprogs" #Partitioning
+packages+=" gparted ntfsprogs dosfstools e2fsprogs" #Partitioning
 packages+=" alsa-base alsa-utils flac mplayer geeqie audacity gimp" #Multimedia
 packages+=" leafpad vim ghex git astyle" #programming
-packages+=" google-chrome-stable python-gpgme dropbox transmission-gtk" #networking
+packages+=" google-chrome-stable python-gpgme dropbox" #networking
 packages+=" kernel-package fakeroot libncurses5-dev" #kernelBuild
 packages+=" p7zip-full p7zip-rar" #Archive Utils
 if [ "${sshd}" = "y" -o "${sshd}" = "Y" ] ; then
@@ -44,13 +39,10 @@ else
 fi
 echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >>"/etc/apt/sources.list.d/yogpstop_dpi.list"
 
-sudo apt-key adv --keyserver pgp.mit.edu --recv-keys 5044912E
-wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-
 apt-get -y update
 apt-get -y --purge --no-install-recommends dist-upgrade
-apt-get -y --purge --no-install-recommends install ${packages}
 apt-get -y --purge --no-install-recommends autoremove
+apt-get -y --purge --no-install-recommends install ${packages}
 apt-get -y clean
 
 echo net.ipv6.conf.all.disable_ipv6=1 >/etc/sysctl.d/disableipv6.conf
