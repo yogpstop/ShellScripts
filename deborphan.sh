@@ -8,7 +8,7 @@ deborphan -k deborphan.list -A gparted ntfsprogs dosfstools e2fsprogs #Partition
 deborphan -k deborphan.list -A alsa-base alsa-utils flac mplayer geeqie audacity gimp #Multimedia
 deborphan -k deborphan.list -A leafpad vim ghex git astyle #programming
 deborphan -k deborphan.list -A google-chrome-stable python-gpgme dropbox #networking
-deborphan -k deborphan.list -A kernel-package fakeroot libncurses5-dev #kernelBuild
+deborphan -k deborphan.list -A kernel-package fakeroot libncurses5-dev bc ftp #kernelBuild
 deborphan -k deborphan.list -A p7zip-full p7zip-rar #Archive Utils
 deborphan -k deborphan.list -A openssh-server openssh-client
 ###########################################################################

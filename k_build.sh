@@ -23,7 +23,7 @@ if [ ${#list[@]} -ne 1 ] ; then
   done
 fi
 read -p "Please type revision number: " revision
-if [ -z "${revision}" ] ; then
+if [ "${revision}" ] ; then
 	revision="--revision=${revision}"
 fi
 filename="linux-"
