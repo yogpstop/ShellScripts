@@ -5,7 +5,7 @@ IFS='
 '
 for arg in "$@" ; do
   arg=`readlink -mq "${arg}"`
-  if [ ${arg} == *.flac ] ; then
+  if [[ "${arg}" =~ .*\.[Ff][Ll][Aa][Cc] ]] ; then
     fl+=(${arg})
   elif [ -d "${arg}" ] ; then
     fl+=(`find "${arg}" -type f -iname "*.flac"`)
@@ -13,7 +13,7 @@ for arg in "$@" ; do
     bdir=`dirname "${arg}"`
     while read line ; do
       line=`readlink -mq "${bdir}/${line}"`
-      if [ -f "${line}" -a "${line##*.}" = "flac" ] ; then
+      if [ -f "${line}" ] && [[ "${line}" =~ .*\.[Ff][Ll][Aa][Cc] ]] ; then
         fl+=(${line})
       fi
     done <"${arg}"
@@ -24,7 +24,7 @@ fl=(`echo "${fl[*]}" | shuf`)
 for line in "${fl[@]}" ; do
   str=${line##*/}
   echo "Now playing... ${str%.*}"
-  flac -cds "${line}" | chrt -r 98 dd ibs=2G iflag=fullblock 2>/dev/null | chrt -r 99 aplay -D hw:CODEC -q -
+  flac -cds "${line}" | chrt -r 98 dd ibs=2G iflag=fullblock 2>/dev/null | chrt -r 99 aplay -D rt -q --period-size=48 --buffer-size=144 -
 done
 exit 0
 
