@@ -25,7 +25,7 @@ packages+=" lxde-common lxpanel lxterminal pcmanfm libgnome2-0" #GNOME
 if [ "${gdm}" = "y" -o "${gdm}" = "Y" ] ; then
 	packages+=" gdm3"
 else
-	packages+=" lightdm openbox"
+	packages+=" lightdm openbox lxpolkit policykit-1"
 fi
 packages+=" ibus-mozc im-switch fontforge" #JapaneseInput
 packages+=" gparted ntfsprogs dosfstools e2fsprogs" #Partitioning

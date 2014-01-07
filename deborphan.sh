@@ -3,7 +3,7 @@ deborphan -k deborphan.list -A ntpdate deborphan #correctTime,PackageManager
 deborphan -k deborphan.list -A xserver-xorg-video-intel xserver-xorg-video-vesa
 deborphan -k deborphan.list -A xserver-xorg xinit #X11
 deborphan -k deborphan.list -A lxde-common lxpanel lxterminal pcmanfm libgnome2-0 #GNOME
-deborphan -k deborphan.list -A gdm3 lightdm openbox
+deborphan -k deborphan.list -A gdm3 lightdm openbox lxpolkit policykit-1
 deborphan -k deborphan.list -A ibus-mozc im-switch fontforge #JapaneseInput
 deborphan -k deborphan.list -A gparted ntfsprogs dosfstools e2fsprogs #Partitioning
 deborphan -k deborphan.list -A alsa-base alsa-utils flac mplayer geeqie audacity gimp #Multimedia
