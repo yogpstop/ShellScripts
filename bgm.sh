@@ -25,9 +25,9 @@ for line in "${fl[@]}" ; do
   echo "Now playing... ${str%.*}"
   flac -cds "${line}" | chrt -r 98 dd ibs=2G iflag=fullblock 2>/dev/null | \
     chrt -r 99 aplay -D rt -q --period-size=48 --buffer-size=144 - && \
-    kill `ps | grep "cat" | sed -e "s/ \([0-9]*\).*/\1/"` &>/dev/null &
+    kill -SIGINT `ps | grep "cat" | sed -e "s/ \([0-9]*\).*/\1/"` &>/dev/null &
   cat
-  kill `ps | grep -E "aplay|flac|dd|chrt" | \
+  kill -SIGINT `ps | grep -E "aplay|flac|dd|chrt" | \
     sed -e "s/ \([0-9]*\).*/\1/"` &>/dev/null
   wait `ps | grep "aplay" | sed -e "s/ \([0-9]*\).*/\1/"`
 done
