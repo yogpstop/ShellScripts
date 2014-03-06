@@ -53,7 +53,7 @@ apt-get -y clean
 wget -O "skype.deb" "http://www.skype.com/go/getskype-linux-deb-32"
 wget -O "chrome.deb" "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
 wget -O "steam.deb" "http://media.steampowered.com/client/installer/steam.deb"
-wget -O "dropbox.deb" "https://linux.dropbox.com/packages/debian/dropbox_1.6.0_amd64.deb"
+wget -O "dropbox.deb" "https://linux.dropbox.com/packages/debian/`wget -O - -q https://linux.dropbox.com/packages/debian/ |  sed -e "s/[ \t\n\r]//g" | sed -e "s/</\n</g" | sed -ne "s~.*\(dropbox_[0-9\.]\+_amd64.deb\).*~\1~p" | sort -rV | head -q -n 1`"
 dpkg -i "skype.deb" "chrome.deb" "steam.deb" "dropbox.deb"
 rm "skype.deb" "chrome.deb" "steam.deb" "dropbox.deb"
 apt-get -y --purge --no-install-recommends -f install
