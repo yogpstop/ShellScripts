@@ -1,109 +1,113 @@
 #!/bin/bash
+set -eu
+export LANG=C
+git --version
+cvs --version
+bash --version
+sed --version
+rm --version
+cp --version
+mktemp --version
+patch --version
+gcc --version
+make --version
+automake --version
+autoconf --version
+libtool --version
+pkg-config --version
+python --version || python2 --version || python3 --version #Required to yasm
+getopt --version #Required to xmlto, in util-linux
+xmlto --version #Required to nasm
+asciidoc --version #Required to nasm
+TDIR=`mktemp -d`
+TROOT=`mktemp -d`
+export PATH="${TROOT}/bin:${PATH}" #MSYS style
+export C_INCLUDE_PATH="${TROOT}/include" #MinGW style
+export CPLUS_INCLUDE_PATH="$C_INCLUDE_PATH" #MinGW style
+export LIBRARY_PATH="${TROOT}/lib" #MSYS style(?)
+export PKG_CONFIG_PATH="${TROOT}/lib/pkgconfig"
+export CFLAGS='-march=native -pipe -O2'
+export CXXFLAGS="$CFLAGS"
+export LDFLAGS='-s'
+export MAKEFLAGS='-j8'
 HOST=`gcc -dumpmachine`
-if [ "${HOST}" = "x86_64-w64-mingw32" ] ; then
+OPTS="--host=${HOST} --prefix=${TROOT}"
+if [[ "${HOST}" == "x86_64-w64-mingw32" ]] ; then
 	OST="mingw64"
 else
 	OST="mingw"
 fi
-cd || exit 1
-python --version || exit 1
+cd "$TDIR"
 # YASM
-git clone --depth 1 git://github.com/yasm/yasm.git || exit 1
-cd yasm || exit 1
-./autogen.sh || exit 1
-make || exit 1
-make install-strip || exit 1
-cd || exit 1
-rm -rf yasm || exit 1
+git clone --depth 1 git://github.com/yasm/yasm.git
+cd yasm
+./autogen.sh ${OPTS}
+make
+make install-strip
+cd "$TDIR"
 # NASM
-git clone git://repo.or.cz/nasm.git || exit 1
-cd nasm || exit 1
-git checkout nasm-2.10.09
-./autogen.sh || exit 1
-./configure || exit 1
-make || exit 1
-make strip || exit 1
-make install || exit 1
-cd || exit 1
-rm -rf nasm || exit 1
-# OpenSSL
-git clone --depth 1 git://git.openssl.org/openssl.git || exit 1
-cd openssl || exit 1
-sed -i -e "s/\(##\|[0-9]\)UI64\([^0-9a-zA-Z]\?\)/\1ULL\2/g" \
-		`find . -iregex ".*\.\(c\|h\|cpp\)" -type f` || exit 1
-./Configure ${OST} no-shared --prefix=/${HOST} || exit 1
-make || exit 1
-make install || exit 1
-cd || exit 1
-rm -rf openssl || exit 1
+git clone --depth 1 git://repo.or.cz/nasm.git
+cd nasm
+./autogen.sh
+./configure ${OPTS}
+make -j1
+make strip
+make install
+cd "$TDIR"
 # RTMPDump
-git clone --depth 1 git://git.ffmpeg.org/rtmpdump.git || exit 1
-cd rtmpdump || exit 1
-make SYS=mingw SHARED=no prefix=/${HOST} || exit 1
-make install SYS=mingw SHARED=no prefix=/${HOST} || exit 1
-cd /${HOST}/lib/pkgconfig || exit 1
-(patch -p0 <<'_EOT_'
---- libcrypto.pc        2013-08-16 13:46:37 +0900
-+++ libcrypto.pc.new    2013-08-16 14:19:43 +0900
-@@ -7,6 +7,6 @@
- Description: OpenSSL cryptography library
- Version: 1.1.0-dev
- Requires: 
--Libs: -L${libdir} -lcrypto
--Libs.private: -lws2_32 -lgdi32 -lcrypt32
-+Libs: -L${libdir} -lcrypto -lws2_32 -lgdi32
-+Libs.private: -lcrypt32
- Cflags: -I${includedir} 
+git clone --depth 1 git://git.ffmpeg.org/rtmpdump.git
+cd rtmpdump
+make SYS=mingw SHARED=no CRYPTO= prefix=${TROOT}
+make install SYS=mingw SHARED=no CRYPTO= prefix=${TROOT}
+cd ${TROOT}/lib/pkgconfig
+patch -p0 <<'_EOT_'
 --- librtmp.pc      2013-08-16 14:13:20 +0900
 +++ librtmp.pc.new  2013-08-16 14:17:58 +0900
 @@ -8,6 +8,6 @@
  Version: v2.4
- Requires: libssl,libcrypto
+ Requires: 
  URL: http://rtmpdump.mplayerhq.hu
 -Libs: -L${libdir} -lrtmp -lz 
 -Libs.private: -lws2_32 -lwinmm -lgdi32
-+Libs: -L${libdir} -lrtmp -lz -lwinmm 
-+Libs.private: -lws2_32 -lgdi32
++Libs: -L${libdir} -lrtmp -lz -lws2_32 -lwinmm 
++Libs.private: -lgdi32
  Cflags: -I${incdir}
 _EOT_
-) || exit 1
-cd || exit 1
-rm -rf rtmpdump || exit 1
+cd "$TDIR"
 # fdk-aac
-git clone --depth 1 git://github.com/mstorsjo/fdk-aac.git || exit 1
-cd fdk-aac || exit 1
-./autogen.sh || exit 1
-./configure --prefix=/${HOST} --disable-shared --enable-static || exit 1
-make || exit 1
-make install || exit 1
-cd || exit 1
-rm -rf fdk-aac || exit 1
+git clone --depth 1 git://github.com/mstorsjo/fdk-aac.git
+cd fdk-aac
+./autogen.sh
+./configure ${OPTS} --disable-shared --enable-static
+make
+make install
+cd "$TDIR"
 # lame
 echo -en "/1 :pserver:anonymous@lame.cvs.sourceforge.net:2401/cvsroot/lame A\n" >lame.cvspass
 CVS_PASSFILE=lame.cvspass cvs -z3 \
 	-d:pserver:anonymous@lame.cvs.sourceforge.net:/cvsroot/lame \
-	co -P lame || exit 1
-rm -rf lame.cvspass || exit 1
-cd lame || exit 1
-./configure --disable-shared --enable-static --prefix=/${HOST} \
-	--disable-frontend || exit 1
-make || exit 1
-make install || exit 1
-cd || exit 1
-rm -rf lame || exit 1
+	co -P lame
+cd lame
+./configure --disable-shared --enable-static ${OPTS} --disable-frontend
+make
+make install
+cd "$TDIR"
 # x264
-git clone --depth 1 git://git.videolan.org/x264.git || exit 1
-cd x264 || exit 1
-./configure --host=${HOST} --prefix=/${HOST} --enable-win32thread \
-	--enable-static --disable-cli --enable-strip || exit 1
-make || exit 1
-make install || exit 1
-cd || exit 1
-rm -rf x264 || exit 1
+#git clone --depth 1 git://git.videolan.org/x264.git
+# I use repo.or.cz mirror because official repository is extremely slow for me
+git clone --depth 1 git://repo.or.cz/x264.git
+cd x264
+./configure ${OPTS} --enable-win32thread \
+	--enable-static --disable-cli --enable-strip
+make
+make install
+cd "$TDIR"
 # ffmpeg
-git clone --depth 1 git://source.ffmpeg.org/ffmpeg.git || exit 1
-cd ffmpeg || exit 1
-(patch -p0 <<'_EOT_'
+# git clone --depth 1 git://source.ffmpeg.org/ffmpeg.git
+# I use github mirror because official repository is extremely slow for me
+git clone --depth 1 git://github.com/FFmpeg/FFmpeg.git
+cd ffmpeg
+patch -p0 <<'_EOT_'
 --- libavcodec/Makefile        2013-08-16 13:46:37 +0900
 +++ libavcodec/Makefile.new    2013-08-16 14:19:43 +0900
 @@ -692,7 +692,7 @@
@@ -116,8 +120,6 @@ cd ffmpeg || exit 1
  OBJS-$(CONFIG_LIBOPENCORE_AMRNB_ENCODER)  += libopencore-amr.o
  OBJS-$(CONFIG_LIBOPENCORE_AMRWB_DECODER)  += libopencore-amr.o
 _EOT_
-) || exit 1
-PKG_CONFIG_PATH=/${HOST}/lib/pkgconfig \
 ./configure --fatal-warnings --enable-gpl --enable-nonfree \
 --disable-everything --enable-libmp3lame --disable-ffprobe \
 --disable-ffserver --disable-ffplay --disable-doc --disable-debug \
@@ -125,10 +127,10 @@ PKG_CONFIG_PATH=/${HOST}/lib/pkgconfig \
 --enable-static --disable-shared --enable-indev=dshow \
 --enable-encoder='libx264,libfdk_aac,libmp3lame' --enable-muxer=flv \
 --enable-protocol='file,librtmp,tcp' --enable-filter='scale,aresample' \
---enable-decoder='rawvideo,pcm_s16le' || exit 1
-make || exit 1
-cp ffmpeg.exe .. || exit 1
-cd || exit 1
-rm -rf ffmpeg || exit 1
+--enable-decoder='rawvideo,pcm_s16le' --disable-pthreads --disable-iconv \
+--target-os=mingw32 --prefix=${TROOT}
+make
+cp ffmpeg.exe ~
+cd
+#rm -rf ${TDIR} ${TROOT}
 echo "BUILD SUCCESSED"
-
