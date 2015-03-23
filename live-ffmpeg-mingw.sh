@@ -1,6 +1,10 @@
 #!/bin/bash
 set -eu
 export LANG=C
+perl --version
+exec 1> >(perl -e 'use POSIX "strftime";open(FILE, ">>stdout.log");$/="\n";while(<>){$_=~s~[\r\n]+$~~g;$_=strftime "[%Y-%m-%dT%H:%M:%S]$_\n", localtime;print STDOUT "$_";print FILE "$_";}close(FILE);')
+exec 2> >(perl -e 'use POSIX "strftime";open(FILE, ">>stderr.log");$/="\n";while(<>){$_=~s~[\r\n]+$~~g;$_=strftime "[%Y-%m-%dT%H:%M:%S]$_\n", localtime;print STDERR "$_";print FILE "$_";}close(FILE);')
+perl --version
 git --version
 cvs --version
 bash --version
@@ -31,7 +35,7 @@ export CXXFLAGS="$CFLAGS"
 export LDFLAGS='-s'
 export MAKEFLAGS='-j8'
 HOST=`gcc -dumpmachine`
-OPTS="--host=${HOST} --prefix=${TROOT}"
+OPTS="--build=${HOST} --host=${HOST} --prefix=${TROOT} --enable-static --disable-shared --disable-frontend --disable-cli --enable-win32thread --enable-strip"
 if [[ "${HOST}" == "x86_64-w64-mingw32" ]] ; then
 	OST="mingw64"
 else
@@ -56,7 +60,7 @@ make install
 cd "$TDIR"
 # RTMPDump
 git clone --depth 1 git://git.ffmpeg.org/rtmpdump.git
-cd rtmpdump
+cd rtmpdump/librtmp
 make SYS=mingw SHARED=no CRYPTO= prefix=${TROOT}
 make install SYS=mingw SHARED=no CRYPTO= prefix=${TROOT}
 cd ${TROOT}/lib/pkgconfig
@@ -78,9 +82,9 @@ cd "$TDIR"
 git clone --depth 1 git://github.com/mstorsjo/fdk-aac.git
 cd fdk-aac
 ./autogen.sh
-./configure ${OPTS} --disable-shared --enable-static
+./configure ${OPTS}
 make
-make install
+make install-strip
 cd "$TDIR"
 # lame
 echo -en "/1 :pserver:anonymous@lame.cvs.sourceforge.net:2401/cvsroot/lame A\n" >lame.cvspass
@@ -88,17 +92,16 @@ CVS_PASSFILE=lame.cvspass cvs -z3 \
 	-d:pserver:anonymous@lame.cvs.sourceforge.net:/cvsroot/lame \
 	co -P lame
 cd lame
-./configure --disable-shared --enable-static ${OPTS} --disable-frontend
+./configure ${OPTS}
 make
-make install
+make install-strip
 cd "$TDIR"
 # x264
 #git clone --depth 1 git://git.videolan.org/x264.git
 # I use repo.or.cz mirror because official repository is extremely slow for me
 git clone --depth 1 git://repo.or.cz/x264.git
 cd x264
-./configure ${OPTS} --enable-win32thread \
-	--enable-static --disable-cli --enable-strip
+./configure ${OPTS}
 make
 make install
 cd "$TDIR"
@@ -132,5 +135,5 @@ _EOT_
 make
 cp ffmpeg.exe ~
 cd
-#rm -rf ${TDIR} ${TROOT}
+rm -rf ${TDIR} ${TROOT}
 echo "BUILD SUCCESSED"
