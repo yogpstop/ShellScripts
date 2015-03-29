@@ -1,0 +1,34 @@
+#!/bin/bash
+set -euxv
+ER_VB=1.03
+ER_V=${ER_VB}-1
+ER_B=editrights-$ER_V
+ER_TXZ=${ER_B}-src.tar.xz
+wget -nv ftp://ftp.iij.ad.jp/pub/cygwin/x86_64/release/editrights/$ER_TXZ
+tar xvf $ER_TXZ
+cd ${ER_B}.src
+tar xvf editrights-${ER_VB}.tar.*
+cd editrights
+sed -i -e 's~stricmp~strcasecmp~g' main.c
+make CC=x86_64-pc-msys-gcc
+chcp.com 65001
+dos_var_empty=$(cygpath -w /var/empty)
+_password=dummy
+username=cyg_server
+unpriv_user=sshd
+admingroup=$(mkgroup -l | awk -F: '{if($2=="S-1-5-32-544")print $1}')
+net user "${username}" "${_password}" //add //fullname:"Privileged server" //homedir:"${dos_var_empty}" //yes
+net localgroup "${admingroup}" "${username}" //add
+net user "${unpriv_user}" //add //fullname:"${unpriv_user} privsep" //homedir:"${dos_var_empty}" //active:no
+passwd -e ${username}
+./editrights -a SeAssignPrimaryTokenPrivilege -u ${username}
+./editrights -a SeCreateTokenPrivilege -u ${username}
+./editrights -a SeTcbPrivilege -u ${username}
+./editrights -a SeDenyRemoteInteractiveLogonRight -u ${username}
+./editrights -a SeServiceLogonRight -u ${username}
+mkpasswd -l -u "${username}" | awk -F: '{OFS=":"}{$6="/var/empty";$7="/bin/false";print}' >>"/etc/passwd"
+mkpasswd -l -u "${unpriv_user}" | awk -F: '{OFS=":"}{$6="/var/empty";$7="/bin/false";print}' >>"/etc/passwd"
+cygrunsrv -I sshd -d "CYGWIN sshd" -p /usr/bin/sshd -a "-D" -y tcpip -u cyg_server -w "${_password}"
+net start sshd
+cd ../..
+rm -rf editrights*

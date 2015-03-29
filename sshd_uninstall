@@ -1,0 +1,10 @@
+#!/bin/bash
+set -uxv
+chcp.com 65001
+username=cyg_server
+unpriv_user=sshd
+cygrunsrv -R sshd
+sed -i -e "/^${unpriv_user}/d" /etc/passwd
+sed -i -e "/^${username}/d" /etc/passwd
+net user "${unpriv_user}" //delete
+net user "${username}" //delete
