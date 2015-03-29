@@ -28,6 +28,7 @@ passwd -e ${username}
 ./editrights -a SeServiceLogonRight -u ${username}
 mkpasswd -l -u "${username}" | awk -F: '{OFS=":"}{$6="/var/empty";$7="/bin/false";print}' >>"/etc/passwd"
 mkpasswd -l -u "${unpriv_user}" | awk -F: '{OFS=":"}{$6="/var/empty";$7="/bin/false";print}' >>"/etc/passwd"
+netsh advfirewall firewall add rule name="CYGWIN sshd" dir=in action=allow program="$(cygpath -w /usr/bin/sshd)" enable=yes
 cygrunsrv -I sshd -d "CYGWIN sshd" -p /usr/bin/sshd -a "-D" -y tcpip -u cyg_server -w "${_password}"
 net start sshd
 cd ../..
