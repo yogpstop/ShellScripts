@@ -4,6 +4,38 @@ export LANG=C
 perl --version
 exec 1> >(perl -e 'use POSIX "strftime";open(FILE, ">>stdout.log");$/="\n";while(<>){$_=~s~[\r\n]+$~~g;$_=strftime "[%Y-%m-%dT%H:%M:%S]$_\n", localtime;print STDOUT "$_";print FILE "$_";}close(FILE);')
 exec 2> >(perl -e 'use POSIX "strftime";open(FILE, ">>stderr.log");$/="\n";while(<>){$_=~s~[\r\n]+$~~g;$_=strftime "[%Y-%m-%dT%H:%M:%S]$_\n", localtime;print STDERR "$_";print FILE "$_";}close(FILE);')
+mktemp --version
+TUNE='sandybridge'
+NATIVE='-march=sandybridge -mmmx -mno-3dnow -msse -msse2 -msse3 -mssse3 -mno-sse4a -mcx16 -msahf -mno-movbe -maes -mno-sha -mpclmul -mpopcnt -mno-abm -mno-lwp -mno-fma -mno-fma4 -mno-xop -mno-bmi -mno-bmi2 -mno-tbm -mavx -mno-avx2 -msse4.2 -msse4.1 -mno-lzcnt -mno-rtm -mno-hle -mno-rdrnd -mno-f16c -mno-fsgsbase -mno-rdseed -mno-prfchw -mno-adx -mfxsr -mxsave -mxsaveopt -mno-avx512f -mno-avx512er -mno-avx512cd -mno-avx512pf -mno-prefetchwt1 --param l1-cache-size=32 --param l1-cache-line-size=64 --param l2-cache-size=6144 -mtune=sandybridge' #for i5-2500
+#TUNE='native'
+#NATIVE="-march=${TUNE}"
+ARCH='x86_64'
+HOST="${ARCH}-w64-mingw32"
+TDIR=`mktemp -d`
+TROOT=`mktemp -d`
+export C_INCLUDE_PATH="${TROOT}/include"        #gcc envvar
+export CPLUS_INCLUDE_PATH="$C_INCLUDE_PATH"     #gcc envvar
+export PKG_CONFIG_PATH="${TROOT}/lib/pkgconfig" #pkg-config envvar
+export MAKEFLAGS='-j8'                          #make envvar
+export pkg_config='pkg-config'                  #for ffmpeg
+export CROSS_COMPILE="${HOST}-"                 #for rtmpdump
+export CC="${CROSS_COMPILE}gcc"                 #configure envvar
+export CXX="${CROSS_COMPILE}g++"                #configure envvar
+export CPP="${CROSS_COMPILE}cpp"                #configure envvar
+export CXXCPP="${CROSS_COMPILE}cpp"             #configure envvar
+export CFLAGS="${NATIVE} -pipe -O3"             #configure envvar
+export CXXFLAGS="$CFLAGS"                       #configure envvar
+export LDFLAGS="-s -L${TROOT}/lib"              #configure envvar
+OPTS="--host=${HOST} --prefix=${TROOT} --enable-static --disable-shared --disable-frontend --disable-cli --enable-win32thread --enable-strip --disable-debug"
+if [[ "${HOST}" == "x86_64-w64-mingw32" ]] ; then
+	OST="mingw64"
+else
+	OST="mingw"
+fi
+${CC} --version
+${CXX} --version
+${CPP} --version
+${CXXCPP} --version
 perl --version
 git --version
 cvs --version
@@ -11,60 +43,22 @@ bash --version
 sed --version
 rm --version
 cp --version
-mktemp --version
 patch --version
-gcc --version
 make --version
+autoreconf --version
 automake --version
 autoconf --version
 libtool --version
 pkg-config --version
-python --version || python2 --version || python3 --version #Required to yasm
-getopt --version #Required to xmlto, in util-linux
-xmlto --version #Required to nasm
-asciidoc --version #Required to nasm
-TDIR=`mktemp -d`
-TROOT=`mktemp -d`
-export PATH="${TROOT}/bin:${PATH}" #MSYS style
-export C_INCLUDE_PATH="${TROOT}/include" #MinGW style
-export CPLUS_INCLUDE_PATH="$C_INCLUDE_PATH" #MinGW style
-export LIBRARY_PATH="${TROOT}/lib" #MSYS style(?)
-export PKG_CONFIG_PATH="${TROOT}/lib/pkgconfig"
-export CFLAGS='-march=native -pipe -O2'
-export CXXFLAGS="$CFLAGS"
-export LDFLAGS='-s'
-export MAKEFLAGS='-j8'
-HOST=`gcc -dumpmachine`
-OPTS="--build=${HOST} --host=${HOST} --prefix=${TROOT} --enable-static --disable-shared --disable-frontend --disable-cli --enable-win32thread --enable-strip"
-if [[ "${HOST}" == "x86_64-w64-mingw32" ]] ; then
-	OST="mingw64"
-else
-	OST="mingw"
-fi
-cd "$TDIR"
-# YASM
-git clone --depth 1 git://github.com/yasm/yasm.git
-cd yasm
-./autogen.sh ${OPTS}
-make
-make install-strip
-cd "$TDIR"
-# NASM
-git clone --depth 1 git://repo.or.cz/nasm.git
-cd nasm
-./autogen.sh
-./configure ${OPTS}
-make -j1
-make strip
-make install
+yasm --version
+nasm -version
 cd "$TDIR"
 # RTMPDump
-git clone --depth 1 git://git.ffmpeg.org/rtmpdump.git
+git clone --depth 1 git://repo.or.cz/rtmpdump.git
 cd rtmpdump/librtmp
-make SYS=mingw SHARED=no CRYPTO= prefix=${TROOT}
-make install SYS=mingw SHARED=no CRYPTO= prefix=${TROOT}
-cd ${TROOT}/lib/pkgconfig
-patch -p0 <<'_EOT_'
+make SYS=mingw SHARED=no CRYPTO= OPT="${CFLAGS}" prefix=${TROOT}
+make SYS=mingw SHARED=no CRYPTO= OPT="${CFLAGS}" prefix=${TROOT} install
+patch -d ${TROOT}/lib/pkgconfig -p0 <<'_EOT_'
 --- librtmp.pc      2013-08-16 14:13:20 +0900
 +++ librtmp.pc.new  2013-08-16 14:17:58 +0900
 @@ -8,6 +8,6 @@
@@ -73,7 +67,7 @@ patch -p0 <<'_EOT_'
  URL: http://rtmpdump.mplayerhq.hu
 -Libs: -L${libdir} -lrtmp -lz 
 -Libs.private: -lws2_32 -lwinmm -lgdi32
-+Libs: -L${libdir} -lrtmp -lz -lws2_32 -lwinmm 
++Libs: -L${libdir} -lrtmp -lws2_32 -lwinmm 
 +Libs.private: -lgdi32
  Cflags: -I${incdir}
 _EOT_
@@ -92,6 +86,7 @@ CVS_PASSFILE=lame.cvspass cvs -z3 \
 	-d:pserver:anonymous@lame.cvs.sourceforge.net:/cvsroot/lame \
 	co -P lame
 cd lame
+autoreconf -fiv
 ./configure ${OPTS}
 make
 make install-strip
@@ -101,15 +96,15 @@ cd "$TDIR"
 # I use repo.or.cz mirror because official repository is extremely slow for me
 git clone --depth 1 git://repo.or.cz/x264.git
 cd x264
-./configure ${OPTS}
+./configure ${OPTS} --cross-prefix=${HOST}-
 make
 make install
 cd "$TDIR"
 # ffmpeg
 # git clone --depth 1 git://source.ffmpeg.org/ffmpeg.git
 # I use github mirror because official repository is extremely slow for me
-git clone --depth 1 git://github.com/FFmpeg/FFmpeg.git
-cd ffmpeg
+git clone --depth 1 --branch release/2.5 git://github.com/FFmpeg/FFmpeg.git
+cd FFmpeg
 patch -p0 <<'_EOT_'
 --- libavcodec/Makefile        2013-08-16 13:46:37 +0900
 +++ libavcodec/Makefile.new    2013-08-16 14:19:43 +0900
@@ -126,14 +121,13 @@ _EOT_
 ./configure --fatal-warnings --enable-gpl --enable-nonfree \
 --disable-everything --enable-libmp3lame --disable-ffprobe \
 --disable-ffserver --disable-ffplay --disable-doc --disable-debug \
---enable-libfdk-aac --enable-libx264 --enable-librtmp --cpu=native \
---enable-static --disable-shared --enable-indev=dshow \
+--enable-libfdk-aac --enable-libx264 --enable-librtmp --cpu=${TUNE} \
+--enable-static --disable-shared --enable-indev=dshow --enable-stripping \
 --enable-encoder='libx264,libfdk_aac,libmp3lame' --enable-muxer=flv \
 --enable-protocol='file,librtmp,tcp' --enable-filter='scale,aresample' \
 --enable-decoder='rawvideo,pcm_s16le' --disable-pthreads --disable-iconv \
---target-os=mingw32 --prefix=${TROOT}
+--target-os=mingw32 --prefix=${TROOT} --cross-prefix=${HOST}- --arch=${ARCH}
 make
 cp ffmpeg.exe ~
-cd
 rm -rf ${TDIR} ${TROOT}
 echo "BUILD SUCCESSED"
